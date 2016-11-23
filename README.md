@@ -1,0 +1,2 @@
+# dnscheck
+DNS Check tool
