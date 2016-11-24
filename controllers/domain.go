@@ -38,7 +38,37 @@ func (dc DomainController) GetDomain(w http.ResponseWriter, r *http.Request, p h
 
 	domain := h.Question.JobDomain
 	h.Question.JobTime = time.Now()
-	log.Println("Domain ........... : " + domain)
+	log.Println("Domain : " + domain)
+
+	// Go check DNS!
+
+	domainstate := checkDomainState(domain)
+	if domainstate != "OK" {
+		log.Println(domainstate)
+		h.Question.JobStatus = "Failed"
+		h.Question.JobMessage = domainstate
+		hj, _ := json.MarshalIndent(h, "", "    ")
+		w.Header().Set("Content-Type", "application/json")
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		w.WriteHeader(200)
+		fmt.Fprintf(w, "%s", hj)
+		return
+	}
+
+	// RootNS
+	rootns, err := resolveDomainNS(".")
+	if err != nil {
+		log.Println("No nameservers found: .", err)
+		h.Question.JobStatus = "Failed"
+		h.Question.JobMessage = "No nameservers found"
+		hj, _ := json.MarshalIndent(h, "", "    ")
+		w.Header().Set("Content-Type", "application/json")
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		w.WriteHeader(200)
+		fmt.Fprintf(w, "%s", hj)
+		return
+	}
+	h.Answer.RootNS = rootns
 
 	tld, tldicann := publicsuffix.PublicSuffix(domain)
 	h.Answer.DomainTLD = tld

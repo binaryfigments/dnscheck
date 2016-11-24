@@ -12,15 +12,16 @@ type Question struct {
 
 // Answer struct
 type Answer struct {
-	DomainTLD         string          `json:"DomainTLD"`
-	DomainTLDicann    bool            `json:"DomainTLDicann"`
-	DomainTLDNS       []string        `json:"DomainTLDNS"`
-	DSRecordCount     int             `json:"DSRecordCount"`
+	DomainTLD         string          `json:"DomainTLD,omitempty"`
+	DomainTLDicann    bool            `json:"DomainTLDicann,omitempty"`
+	RootNS            []string        `json:"RootNS,omitempty"`
+	DomainTLDNS       []string        `json:"DomainTLDNS,omitempty"`
+	DomainNS          []string        `json:"DomainNS,omitempty"`
+	DSRecordCount     int             `json:"DSRecordCount,omitempty"`
+	DNSKEYRecordCount int             `json:"DNSKEYRecordCount,omitempty"`
 	DomainDS          []*DomainDS     `json:"DomainDS,omitempty"`
-	DNSKEYRecordCount int             `json:"DNSKEYRecordCount"`
 	DomainDNSKEY      []*DomainDNSKEY `json:"DomainDNSKEY,omitempty"`
 	DomainCalcDS      []*DomainCalcDS `json:"DomainCalcDS,omitempty"`
-	DomainNS          []string        `json:"DomainNS"`
 	DomainA           []string        `json:"DomainA,omitempty"`
 	DomainAAAA        []string        `json:"DomainAAAA,omitempty"`
 	DomainMX          []string        `json:"DomainMX,omitempty"`
