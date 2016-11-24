@@ -36,15 +36,13 @@ Explain:
 
 # Dependencies
 
- * Go 1.6.x tested https://golang.org
+ * Go 1.7.x tested https://golang.org
  * httprouter https://github.com/julienschmidt/httprouter
- * govalidator https://github.com/asaskevich/govalidator
  * govalidator https://github.com/miekg/dns
  * publixsuffix https://golang.org/x/net/publicsuffix
 
 ```
 go get github.com/julienschmidt/httprouter
-go get github.com/asaskevich/govalidator
 go get github.com/miekg/dns
 go get golang.org/x/net/publicsuffix
 ```

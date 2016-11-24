@@ -31,14 +31,14 @@ func main() {
 	}
 	flag.Parse()
 
-	// Loggins
+	// Loggings
 	log.Println("-----------------------------------------")
 	log.Println("     Check Domain API written in Go.     ")
 	log.Println("-----------------------------------------")
 	log.Println("    Listening: http://" + *ListenHost + ":" + *ListenPort + "    ")
 	log.Println("-----------------------------------------")
 
-	// Instantiate a new router
+	// Initiate a new router
 	r := httprouter.New()
 
 	dc := controllers.NewDomainController()
