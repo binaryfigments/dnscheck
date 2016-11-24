@@ -1,6 +1,6 @@
 # dnscheck
 
-API DNS and DNSSEC information from DNS
+API DNS and DNSSEC information from DNS.
 
 Download, build and run.
 
@@ -41,7 +41,7 @@ Explain:
  * govalidator https://github.com/asaskevich/govalidator
  * govalidator https://github.com/miekg/dns
  * publixsuffix https://golang.org/x/net/publicsuffix
- 
+
 ```
 go get github.com/julienschmidt/httprouter
 go get github.com/asaskevich/govalidator

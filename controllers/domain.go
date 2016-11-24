@@ -1,9 +1,5 @@
 package controllers
 
-/*
- * Todo: Single function
- */
-
 import (
 	"encoding/json"
 	"fmt"
@@ -19,7 +15,7 @@ import (
 )
 
 type (
-	// DomainController type struc
+	// DomainController struct
 	DomainController struct{}
 )
 
