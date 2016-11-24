@@ -35,8 +35,19 @@ func (dc DomainController) GetDomain(w http.ResponseWriter, r *http.Request, p h
 		domain := r.FormValue("domain")
 		h.Question.JobDomain = domain
 	}
-
-	domain := h.Question.JobDomain
+	domain, err := publicsuffix.EffectiveTLDPlusOne(h.Question.JobDomain)
+	if err != nil {
+		log.Println("Domain not OK : ", err)
+		h.Question.JobStatus = "Failed"
+		h.Question.JobMessage = "Domain not OK"
+		hj, _ := json.MarshalIndent(h, "", "    ")
+		w.Header().Set("Content-Type", "application/json")
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		w.WriteHeader(200)
+		fmt.Fprintf(w, "%s", hj)
+		return
+	}
+	// domain := h.Question.JobDomain
 	h.Question.JobTime = time.Now()
 	log.Println("Domain : " + domain)
 
