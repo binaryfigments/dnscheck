@@ -259,8 +259,13 @@ func resolveDomainDNSKEY(domain string, nameserver string) ([]*models.DomainDNSK
 	return dnskey, err
 }
 
-func resolveDomainDNSKEY2(domain string, digest uint8, nameserver string) ([]*models.DomainDNSKEY, []*models.DomainCalcDS, error) {
-	dnskey := []*models.DomainDNSKEY{}
+/*
+ * calculateDSRecord function for generating DS records from the DNSKEY.
+ * Inpunt: domainname, digest and nameserver from the hoster.
+ * Output: one of more structs with DS information
+ */
+
+func calculateDSRecord(domain string, digest uint8, nameserver string) ([]*models.DomainCalcDS, error) {
 	calculatedDS := []*models.DomainCalcDS{}
 
 	m := new(dns.Msg)
@@ -269,45 +274,17 @@ func resolveDomainDNSKEY2(domain string, digest uint8, nameserver string) ([]*mo
 	c := new(dns.Client)
 	in, _, err := c.Exchange(m, nameserver+":53")
 	if err != nil {
-		return dnskey, calculatedDS, err
+		return calculatedDS, err
 	}
-
 	for _, ain := range in.Answer {
 		if a, ok := ain.(*dns.DNSKEY); ok {
-			readkey := new(models.DomainDNSKEY)
-			readkey.Algorithm = a.Algorithm
-			readkey.Flags = a.Flags
-			readkey.Protocol = a.Protocol
-			readkey.PublicKey = a.PublicKey
-			dnskey = append(dnskey, readkey)
-
-			var alg uint8
-			switch a.Algorithm {
-			case 5:
-				alg = dns.SHA1
-			case 7:
-				alg = dns.SHA1
-			case 8:
-				alg = dns.SHA256
-			case 10:
-				alg = dns.SHA512
-			case 13:
-				alg = dns.SHA256
-			case 14:
-				alg = dns.SHA384
-			}
-
-			log.Printf("Algorithm ........ : %d \n", alg)
-			if alg != 0 {
-				calckey := new(models.DomainCalcDS)
-				calckey.Algorithm = a.ToDS(digest).Algorithm
-				calckey.Digest = a.ToDS(digest).Digest
-				calckey.DigestType = a.ToDS(digest).DigestType
-				calckey.KeyTag = a.ToDS(digest).KeyTag
-				calculatedDS = append(calculatedDS, calckey)
-			}
+			calckey := new(models.DomainCalcDS)
+			calckey.Algorithm = a.ToDS(digest).Algorithm
+			calckey.Digest = a.ToDS(digest).Digest
+			calckey.DigestType = a.ToDS(digest).DigestType
+			calckey.KeyTag = a.ToDS(digest).KeyTag
+			calculatedDS = append(calculatedDS, calckey)
 		}
 	}
-
-	return dnskey, calculatedDS, err
+	return calculatedDS, err
 }
