@@ -49,12 +49,14 @@ go get golang.org/x/net/publicsuffix
 ```
 # TODO
 
+- [ ] TOP DOWN DNS CHECK!
 - [ ] Error checking and reporting
 - [ ] Saving data for later use
 - [ ] normal **formatting**
 - [x] DNSSEC check
 - [ ] Summary
 - [ ] Structuring
+- [ ] More information
 
 # The MIT License (MIT)
 
