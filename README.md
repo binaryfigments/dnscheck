@@ -57,6 +57,12 @@ go get golang.org/x/net/publicsuffix
 - [ ] Structuring
 - [ ] More information
 
+# Download, build and run
+[![asciicast](https://asciinema.org/a/94021.png)](https://asciinema.org/a/94021)
+
+# Test with curl
+[![asciicast](https://asciinema.org/a/94022.png)](https://asciinema.org/a/94022)
+
 # The MIT License (MIT)
 
 Copyright (c) 2016 Sebastian Broekhoven
