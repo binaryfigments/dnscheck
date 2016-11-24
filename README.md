@@ -1,4 +1,4 @@
-# dnscheck
+# Go / Golang DNS and DNSSEC Check
 
 API DNS and DNSSEC information from DNS.
 
