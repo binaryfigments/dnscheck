@@ -101,29 +101,34 @@ func (dc DomainController) GetDomain(w http.ResponseWriter, r *http.Request, p h
 	}
 
 	h.Answer.DomainNS = nameservers
-
 	domainnameserver := nameservers[0]
 
-	if h.Answer.DomainDS != nil {
-		// ---
-		digest := h.Answer.DomainDS[0].DigestType
-		dnskey, calculatedDS, err := resolveDomainDNSKEY(domain, digest, domainnameserver)
-		if err != nil {
-			log.Println("DNSKEY lookup failed: .", err)
-			h.Question.JobStatus = "Failed"
-			h.Question.JobMessage = "DNSKEY lookup failed"
-			hj, _ := json.MarshalIndent(h, "", "    ")
-			w.Header().Set("Content-Type", "application/json")
-			w.Header().Set("Access-Control-Allow-Origin", "*")
-			w.WriteHeader(200)
-			fmt.Fprintf(w, "%s", hj)
-			return
-		}
-		log.Println("[OK] DNSKEY record lookup done.")
-		h.Answer.DomainDNSKEY = dnskey
-		h.Answer.DomainCalcDS = calculatedDS
-		// ---
+	h.Answer.DSRecordCount = cap(h.Answer.DomainDS)
+
+	var digest uint8
+	if cap(h.Answer.DomainDS) != 0 {
+		digest = h.Answer.DomainDS[0].DigestType
+		log.Println("[OK] DS Information found:", digest)
 	}
+
+	dnskey, err := resolveDomainDNSKEY(domain, domainnameserver)
+	if err != nil {
+		log.Println("DNSKEY lookup failed: .", err)
+		h.Question.JobStatus = "Failed"
+		h.Question.JobMessage = "DNSKEY lookup failed"
+		hj, _ := json.MarshalIndent(h, "", "    ")
+		w.Header().Set("Content-Type", "application/json")
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		w.WriteHeader(200)
+		fmt.Fprintf(w, "%s", hj)
+		return
+	}
+	log.Println("[OK] DNSKEY record lookup done.")
+	h.Answer.DomainDNSKEY = dnskey
+
+	h.Answer.DNSKEYRecordCount = cap(h.Answer.DomainDNSKEY)
+
+	// h.Answer.DomainCalcDS = calculatedDS
 
 	h.Question.JobStatus = "OK"
 	h.Question.JobMessage = "Job done!"
@@ -137,7 +142,8 @@ func (dc DomainController) GetDomain(w http.ResponseWriter, r *http.Request, p h
 }
 
 func resolveDomainA(domain string) ([]string, error) {
-	answer := make([]string, 0)
+	// answer := make([]string, 0)
+	var answer []string
 	m := new(dns.Msg)
 	m.SetQuestion(dns.Fqdn(domain), dns.TypeA)
 	c := new(dns.Client)
@@ -154,7 +160,8 @@ func resolveDomainA(domain string) ([]string, error) {
 }
 
 func resolveDomainAAAA(domain string) ([]string, error) {
-	answer := make([]string, 0)
+	// answer := make([]string, 0)
+	var answer []string
 	m := new(dns.Msg)
 	m.SetQuestion(dns.Fqdn(domain), dns.TypeAAAA)
 	c := new(dns.Client)
@@ -171,7 +178,8 @@ func resolveDomainAAAA(domain string) ([]string, error) {
 }
 
 func resolveDomainMX(domain string) ([]string, error) {
-	answer := make([]string, 0)
+	// answer := make([]string, 0)
+	var answer []string
 	m := new(dns.Msg)
 	m.SetQuestion(dns.Fqdn(domain), dns.TypeMX)
 	c := new(dns.Client)
@@ -188,7 +196,8 @@ func resolveDomainMX(domain string) ([]string, error) {
 }
 
 func resolveDomainNS(domain string) ([]string, error) {
-	answer := make([]string, 0)
+	// answer := make([]string, 0)
+	var answer []string
 	m := new(dns.Msg)
 	m.SetQuestion(dns.Fqdn(domain), dns.TypeNS)
 	c := new(dns.Client)
@@ -213,8 +222,10 @@ func resolveDomainDS(domain string, nameserver string) ([]*models.DomainDS, erro
 	c := new(dns.Client)
 	in, _, err := c.Exchange(m, nameserver+":53")
 	if err != nil {
+		log.Println("[FAIL] No DS records found.")
 		return ds, err
 	}
+	fmt.Println(cap(in.Answer))
 	for _, ain := range in.Answer {
 		if a, ok := ain.(*dns.DS); ok {
 			readkey := new(models.DomainDS)
@@ -228,7 +239,31 @@ func resolveDomainDS(domain string, nameserver string) ([]*models.DomainDS, erro
 	return ds, nil
 }
 
-func resolveDomainDNSKEY(domain string, digest uint8, nameserver string) ([]*models.DomainDNSKEY, []*models.DomainCalcDS, error) {
+func resolveDomainDNSKEY(domain string, nameserver string) ([]*models.DomainDNSKEY, error) {
+	dnskey := []*models.DomainDNSKEY{}
+
+	m := new(dns.Msg)
+	m.SetQuestion(dns.Fqdn(domain), dns.TypeDNSKEY)
+	m.SetEdns0(4096, true)
+	c := new(dns.Client)
+	in, _, err := c.Exchange(m, nameserver+":53")
+	if err != nil {
+		return dnskey, err
+	}
+	for _, ain := range in.Answer {
+		if a, ok := ain.(*dns.DNSKEY); ok {
+			readkey := new(models.DomainDNSKEY)
+			readkey.Algorithm = a.Algorithm
+			readkey.Flags = a.Flags
+			readkey.Protocol = a.Protocol
+			readkey.PublicKey = a.PublicKey
+			dnskey = append(dnskey, readkey)
+		}
+	}
+	return dnskey, err
+}
+
+func resolveDomainDNSKEY2(domain string, digest uint8, nameserver string) ([]*models.DomainDNSKEY, []*models.DomainCalcDS, error) {
 	dnskey := []*models.DomainDNSKEY{}
 	calculatedDS := []*models.DomainCalcDS{}
 

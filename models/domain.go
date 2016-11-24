@@ -12,16 +12,18 @@ type Question struct {
 
 // Answer struct
 type Answer struct {
-	DomainTLD      string          `json:"DomainTLD"`
-	DomainTLDicann bool            `json:"DomainTLDicann"`
-	DomainTLDNS    []string        `json:"DomainTLDNS"`
-	DomainDS       []*DomainDS     `json:"DomainDS,omitempty"`
-	DomainDNSKEY   []*DomainDNSKEY `json:"DomainDNSKEY,omitempty"`
-	DomainCalcDS   []*DomainCalcDS `json:"DomainCalcDS,omitempty"`
-	DomainNS       []string        `json:"DomainNS"`
-	DomainA        []string        `json:"DomainA,omitempty"`
-	DomainAAAA     []string        `json:"DomainAAAA,omitempty"`
-	DomainMX       []string        `json:"DomainMX,omitempty"`
+	DomainTLD         string          `json:"DomainTLD"`
+	DomainTLDicann    bool            `json:"DomainTLDicann"`
+	DomainTLDNS       []string        `json:"DomainTLDNS"`
+	DSRecordCount     int             `json:"DSRecordCount"`
+	DomainDS          []*DomainDS     `json:"DomainDS,omitempty"`
+	DNSKEYRecordCount int             `json:"DNSKEYRecordCount"`
+	DomainDNSKEY      []*DomainDNSKEY `json:"DomainDNSKEY,omitempty"`
+	DomainCalcDS      []*DomainCalcDS `json:"DomainCalcDS,omitempty"`
+	DomainNS          []string        `json:"DomainNS"`
+	DomainA           []string        `json:"DomainA,omitempty"`
+	DomainAAAA        []string        `json:"DomainAAAA,omitempty"`
+	DomainMX          []string        `json:"DomainMX,omitempty"`
 }
 
 // Message for retunring
