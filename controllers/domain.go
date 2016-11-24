@@ -78,8 +78,6 @@ func (dc DomainController) GetDomain(w http.ResponseWriter, r *http.Request, p h
 	}
 	h.Answer.DomainDS = domainds
 
-	digest := h.Answer.DomainDS[0].DigestType
-
 	arecords, err := resolveDomainA(domain)
 	h.Answer.DomainA = arecords
 
@@ -103,23 +101,29 @@ func (dc DomainController) GetDomain(w http.ResponseWriter, r *http.Request, p h
 	}
 
 	h.Answer.DomainNS = nameservers
-	domainnameserver := nameservers[0]
-	dnskey, calculatedDS, err := resolveDomainDNSKEY(domain, digest, domainnameserver)
-	if err != nil {
-		log.Println("DNSKEY lookup failed: .", err)
-		h.Question.JobStatus = "Failed"
-		h.Question.JobMessage = "DNSKEY lookup failed"
-		hj, _ := json.MarshalIndent(h, "", "    ")
-		w.Header().Set("Content-Type", "application/json")
-		w.Header().Set("Access-Control-Allow-Origin", "*")
-		w.WriteHeader(200)
-		fmt.Fprintf(w, "%s", hj)
-		return
-	}
-	log.Println("[OK] DNSKEY record lookup done.")
 
-	h.Answer.DomainDNSKEY = dnskey
-	h.Answer.DomainCalcDS = calculatedDS
+	domainnameserver := nameservers[0]
+
+	if h.Answer.DomainDS != nil {
+		// ---
+		digest := h.Answer.DomainDS[0].DigestType
+		dnskey, calculatedDS, err := resolveDomainDNSKEY(domain, digest, domainnameserver)
+		if err != nil {
+			log.Println("DNSKEY lookup failed: .", err)
+			h.Question.JobStatus = "Failed"
+			h.Question.JobMessage = "DNSKEY lookup failed"
+			hj, _ := json.MarshalIndent(h, "", "    ")
+			w.Header().Set("Content-Type", "application/json")
+			w.Header().Set("Access-Control-Allow-Origin", "*")
+			w.WriteHeader(200)
+			fmt.Fprintf(w, "%s", hj)
+			return
+		}
+		log.Println("[OK] DNSKEY record lookup done.")
+		h.Answer.DomainDNSKEY = dnskey
+		h.Answer.DomainCalcDS = calculatedDS
+		// ---
+	}
 
 	h.Question.JobStatus = "OK"
 	h.Question.JobMessage = "Job done!"
