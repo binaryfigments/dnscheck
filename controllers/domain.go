@@ -106,6 +106,7 @@ func (dc DomainController) GetDomain(w http.ResponseWriter, r *http.Request, p h
 	}
 	h.Answer.Nameservers.Registry = tldNameservers
 	tldNameserver := tldNameservers[0]
+	log.Println("[OK] TLD nameserver: .", tldNameserver)
 
 	// Domain nameservers at Registry
 	domainNameserversRegistry, err := resolveDomainNS(tld, tldNameserver)
