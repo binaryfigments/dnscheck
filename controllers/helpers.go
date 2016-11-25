@@ -59,12 +59,12 @@ func resolveDomainMX(domain string) ([]string, error) {
 	return answer, nil
 }
 
-func resolveDomainNS(domain string) ([]string, error) {
+func resolveDomainNS(domain string, nameserver string) ([]string, error) {
 	var answer []string
 	m := new(dns.Msg)
 	m.SetQuestion(dns.Fqdn(domain), dns.TypeNS)
 	c := new(dns.Client)
-	in, _, err := c.Exchange(m, "8.8.8.8:53")
+	in, _, err := c.Exchange(m, nameserver+":53")
 	if err != nil {
 		return answer, err
 	}

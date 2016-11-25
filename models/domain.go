@@ -2,19 +2,24 @@ package models
 
 import "time"
 
+// Message for retunring
+type Message struct {
+	Question Question `json:"question"`
+	Answer   Answer   `json:"answer"`
+}
+
 // Question struct
 type Question struct {
-	JobDomain  string    `json:"JobDomain"`
-	JobStatus  string    `json:"JobStatus"`
-	JobMessage string    `json:"JobMessage"`
-	JobTime    time.Time `json:"JobTime"`
+	JobDomain  string    `json:"domain"`
+	JobStatus  string    `json:"status"`
+	JobMessage string    `json:"message"`
+	JobTime    time.Time `json:"time"`
 }
 
 // Answer struct
 type Answer struct {
-	TLD               TLD             `json:"tld,omitempty"`
-	RootNS            []string        `json:"RootNS,omitempty"`
-	DomainNS          []string        `json:"DomainNS,omitempty"`
+	Registry          Registry        `json:"tld,omitempty"`
+	Nameservers       Nameservers     `json:"nameservers,omitempty"`
 	DSRecordCount     int             `json:"DSRecordCount,omitempty"`
 	DNSKEYRecordCount int             `json:"DNSKEYRecordCount,omitempty"`
 	DomainDS          []*DomainDS     `json:"DomainDS,omitempty"`
@@ -25,17 +30,18 @@ type Answer struct {
 	DomainMX          []string        `json:"DomainMX,omitempty"`
 }
 
-// TLD struct for information
-type TLD struct {
-	TLD         string   `json:"tld,omitempty"`
-	ICANN       bool     `json:"icann,omitempty"`
-	Nameservers []string `json:"nameservers,omitempty"`
+// Registry struct for information
+type Registry struct {
+	TLD   string `json:"tld,omitempty"`
+	ICANN bool   `json:"icann,omitempty"`
 }
 
-// Message for retunring
-type Message struct {
-	Question Question `json:"Question"`
-	Answer   Answer   `json:"Answer"`
+// Nameservers struct for information
+type Nameservers struct {
+	Root           []string `json:"root,omitempty"`
+	Registry       []string `json:"registry,omitempty"`
+	DomainRegistry []string `json:"domainregistry,omitempty"`
+	DomainHoster   []string `json:"domainhoster,omitempty"`
 }
 
 // DomainDS struct
