@@ -81,9 +81,10 @@ func (dc DomainController) GetDomain(w http.ResponseWriter, r *http.Request, p h
 	}
 	h.Answer.RootNS = rootns
 
+	// Fill TLD information.
 	tld, tldicann := publicsuffix.PublicSuffix(domain)
-	h.Answer.DomainTLD = tld
-	h.Answer.DomainTLDicann = tldicann
+	h.Answer.TLD.TLD = tld
+	h.Answer.TLD.ICANN = tldicann
 
 	tldns, err := resolveDomainNS(tld)
 	if err != nil {
@@ -97,7 +98,7 @@ func (dc DomainController) GetDomain(w http.ResponseWriter, r *http.Request, p h
 		fmt.Fprintf(w, "%s", hj)
 		return
 	}
-	h.Answer.DomainTLDNS = tldns
+	h.Answer.TLD.Nameservers = tldns
 
 	tldnameserver := tldns[0]
 	domainds, err := resolveDomainDS(domain, tldnameserver)
@@ -164,7 +165,13 @@ func (dc DomainController) GetDomain(w http.ResponseWriter, r *http.Request, p h
 
 	h.Answer.DNSKEYRecordCount = cap(h.Answer.DomainDNSKEY)
 
-	// h.Answer.DomainCalcDS = calculatedDS
+	if h.Answer.DSRecordCount > 0 && h.Answer.DNSKEYRecordCount > 0 {
+		calculatedDS, err := calculateDSRecord(domain, digest, domainnameserver)
+		if err != nil {
+			log.Println("DS calc failed: .", err)
+		}
+		h.Answer.DomainCalcDS = calculatedDS
+	}
 
 	h.Question.JobStatus = "OK"
 	h.Question.JobMessage = "Job done!"
