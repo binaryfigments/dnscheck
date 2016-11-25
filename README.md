@@ -77,7 +77,7 @@ If it's prossibe, one feature at a time ;-).
 
 | Component | Contact person | Github label | Link |
 |-----------|-----------------|--------|---|
-| Project |  @binaryfigments | [comp:base] (https://github.com/binaryfigments/dnscheck/labels/core) | https://binaryfigments.com |
+| Project | @binaryfigments | [comp:base] (https://github.com/binaryfigments/dnscheck/labels/core) | https://binaryfigments.com |
 
 # The MIT License (MIT)
 
