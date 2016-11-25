@@ -151,14 +151,16 @@ func (dc DomainController) GetDomain(w http.ResponseWriter, r *http.Request, p h
 	dnskey, err := resolveDomainDNSKEY(domain, domainnameserver)
 	if err != nil {
 		log.Println("DNSKEY lookup failed: .", err)
-		h.Question.JobStatus = "Failed"
-		h.Question.JobMessage = "DNSKEY lookup failed"
-		hj, _ := json.MarshalIndent(h, "", "    ")
-		w.Header().Set("Content-Type", "application/json")
-		w.Header().Set("Access-Control-Allow-Origin", "*")
-		w.WriteHeader(200)
-		fmt.Fprintf(w, "%s", hj)
-		return
+		/*
+			h.Question.JobStatus = "Failed"
+			h.Question.JobMessage = "DNSKEY lookup failed"
+			hj, _ := json.MarshalIndent(h, "", "    ")
+			w.Header().Set("Content-Type", "application/json")
+			w.Header().Set("Access-Control-Allow-Origin", "*")
+			w.WriteHeader(200)
+			fmt.Fprintf(w, "%s", hj)
+			return
+		*/
 	}
 	log.Println("[OK] DNSKEY record lookup done.")
 	h.Answer.DomainDNSKEY = dnskey
