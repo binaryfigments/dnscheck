@@ -146,7 +146,7 @@ func (dc DomainController) GetDomain(w http.ResponseWriter, r *http.Request, p h
 	 */
 
 	// Domain nameservers at Hoster
-	domainds, err := resolveDomainDS(domain, domainNameserverRegistry)
+	domainds, err := resolveDomainDS(domain, domainNameserverRegistryIP)
 	if err != nil {
 		log.Println("Error DS lookup : .", err)
 		h.Question.JobStatus = "Failed"
@@ -177,7 +177,7 @@ func (dc DomainController) GetDomain(w http.ResponseWriter, r *http.Request, p h
 		log.Println("[OK] DS Information found:", digest)
 	}
 
-	dnskey, err := resolveDomainDNSKEY(domain, domainNameserverRegistry)
+	dnskey, err := resolveDomainDNSKEY(domain, domainNameserverRegistryIP)
 	if err != nil {
 		log.Println("DNSKEY lookup failed: .", err)
 		/*
@@ -197,7 +197,7 @@ func (dc DomainController) GetDomain(w http.ResponseWriter, r *http.Request, p h
 	h.Answer.DNSKEYRecordCount = cap(h.Answer.DomainDNSKEY)
 
 	if h.Answer.DSRecordCount > 0 && h.Answer.DNSKEYRecordCount > 0 {
-		calculatedDS, err := calculateDSRecord(domain, digest, domainNameserverRegistry)
+		calculatedDS, err := calculateDSRecord(domain, digest, domainNameserverRegistryIP)
 		if err != nil {
 			log.Println("DS calc failed: .", err)
 		}
