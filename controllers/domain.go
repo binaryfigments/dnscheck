@@ -90,6 +90,7 @@ func (dc DomainController) GetDomain(w http.ResponseWriter, r *http.Request, p h
 	}
 	h.Answer.Nameservers.Root = rootNameservers
 	rootNameserver := rootNameservers[0]
+	log.Println("[OK] root nameserver: .", rootNameserver)
 
 	// TLD nameserver
 	tldNameservers, err := resolveDomainNS(tld, rootNameserver)
