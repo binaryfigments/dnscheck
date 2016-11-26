@@ -76,7 +76,7 @@ func (dc DomainController) GetDomain(w http.ResponseWriter, r *http.Request, p h
 
 	// Root nameservers
 	// startnameserver := "8.8.8.8"
-	startnameserver := "64.6.64.6"
+	startnameserver := "8.8.8.8"
 	rootNameservers, err := resolveDomainNS(".", startnameserver)
 	if err != nil {
 		log.Println("No nameservers found: .", err)
@@ -166,7 +166,7 @@ func (dc DomainController) GetDomain(w http.ResponseWriter, r *http.Request, p h
 		log.Println("[OK] DS Information found:", digest)
 	}
 
-	dnskey, err := resolveDomainDNSKEY(domain, domainNameserverHoster)
+	dnskey, err := resolveDomainDNSKEY(domain, domainNameserver)
 	if err != nil {
 		log.Println("DNSKEY lookup failed: .", err)
 		/*

@@ -13,7 +13,7 @@ func resolveDomainA(domain string) ([]string, error) {
 	m := new(dns.Msg)
 	m.SetQuestion(dns.Fqdn(domain), dns.TypeA)
 	c := new(dns.Client)
-	in, _, err := c.Exchange(m, "64.6.64.6:53")
+	in, _, err := c.Exchange(m, "8.8.8.8:53")
 	if err != nil {
 		return answer, err
 	}
@@ -30,7 +30,7 @@ func resolveDomainAAAA(domain string) ([]string, error) {
 	m := new(dns.Msg)
 	m.SetQuestion(dns.Fqdn(domain), dns.TypeAAAA)
 	c := new(dns.Client)
-	in, _, err := c.Exchange(m, "64.6.64.6:53")
+	in, _, err := c.Exchange(m, "8.8.8.8:53")
 	if err != nil {
 		return answer, err
 	}
@@ -47,7 +47,7 @@ func resolveDomainMX(domain string) ([]string, error) {
 	m := new(dns.Msg)
 	m.SetQuestion(dns.Fqdn(domain), dns.TypeMX)
 	c := new(dns.Client)
-	in, _, err := c.Exchange(m, "64.6.64.6:53")
+	in, _, err := c.Exchange(m, "8.8.8.8:53")
 	if err != nil {
 		return answer, err
 	}
@@ -164,7 +164,7 @@ func checkDomainState(domain string) string {
 	c := new(dns.Client)
 
 Redo:
-	in, _, err := c.Exchange(m, "64.6.64.6:53")
+	in, _, err := c.Exchange(m, "8.8.8.8:53")
 
 	// in, _, err := c.Exchange(m, "8.8.4.4:53") // Second return value is RTT, not used for now
 
