@@ -79,7 +79,6 @@ func resolveDomainNS(domain string, nameserver string) ([]string, error) {
 
 func resolveDomainDS(domain string, nameserver string) ([]*models.DomainDS, error) {
 	ds := []*models.DomainDS{}
-
 	m := new(dns.Msg)
 	m.SetQuestion(dns.Fqdn(domain), dns.TypeDS)
 	m.SetEdns0(4096, true)
