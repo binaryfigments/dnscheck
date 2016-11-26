@@ -47,9 +47,9 @@ func (dc DomainController) GetDomain(w http.ResponseWriter, r *http.Request, p h
 		fmt.Fprintf(w, "%s", hj)
 		return
 	}
-	// domain := h.Question.JobDomain
+
 	h.Question.JobTime = time.Now()
-	log.Println("Domain : " + domain)
+	log.Println("[OK] Domain : ", domain)
 
 	// Go check DNS!
 
@@ -93,7 +93,7 @@ func (dc DomainController) GetDomain(w http.ResponseWriter, r *http.Request, p h
 	// rootNameserver := rootNameservers[0]
 
 	// TLD nameserver
-	tldNameservers, err := resolveDomainNS(tld, startnameserver)
+	registryNameservers, err := resolveDomainNS(tld, startnameserver)
 	if err != nil {
 		log.Println("No nameservers found: .", err)
 		h.Question.JobStatus = "Failed"
@@ -105,11 +105,16 @@ func (dc DomainController) GetDomain(w http.ResponseWriter, r *http.Request, p h
 		fmt.Fprintf(w, "%s", hj)
 		return
 	}
-	h.Answer.Nameservers.Registry = tldNameservers
-	tldNameserver := tldNameservers[0]
+	h.Answer.Nameservers.Registry = registryNameservers
+	registryNameserver := registryNameservers[0]
+	log.Println("[OK] TLD nameserver : ", registryNameserver)
+
+	registryNameserverIPs, err := resolveDomainA(registryNameserver)
+	registryNameserverIP := registryNameserverIPs[0]
+	log.Println("[OK] TLD nameserver IP : ", registryNameserverIP)
 
 	// Domain nameservers at Registry
-	domainNameserversRegistry, err := resolveDomainNS(domain, tldNameserver)
+	domainNameserversRegistry, err := resolveDomainNS(domain, registryNameserver)
 	if err != nil {
 		log.Println("No nameservers found: .", err)
 		h.Question.JobStatus = "Failed"
@@ -123,6 +128,7 @@ func (dc DomainController) GetDomain(w http.ResponseWriter, r *http.Request, p h
 	}
 	h.Answer.Nameservers.DomainRegistry = domainNameserversRegistry
 	domainNameserverRegistry := domainNameserversRegistry[0]
+	log.Println("[OK] TLD nameserver : ", domainNameserverRegistry)
 
 	// Domain nameservers at Hoster
 	domainNameserversHoster, err := resolveDomainNS(domain, domainNameserverRegistry)
@@ -147,7 +153,7 @@ func (dc DomainController) GetDomain(w http.ResponseWriter, r *http.Request, p h
 	// Domain nameservers at Hoster
 	domainds, err := resolveDomainDS(domain, domainNameserverHoster)
 	if err != nil {
-		log.Println("Error DS lookup : .", err)
+		log.Println("Error DS lookup : ", err)
 		h.Question.JobStatus = "Failed"
 		h.Question.JobMessage = "Error DS lookup"
 		hj, _ := json.MarshalIndent(h, "", "    ")
@@ -196,7 +202,7 @@ func (dc DomainController) GetDomain(w http.ResponseWriter, r *http.Request, p h
 	h.Answer.DNSKEYRecordCount = cap(h.Answer.DomainDNSKEY)
 
 	if h.Answer.DSRecordCount > 0 && h.Answer.DNSKEYRecordCount > 0 {
-		calculatedDS, err := calculateDSRecord(domain, digest, tldNameserver)
+		calculatedDS, err := calculateDSRecord(domain, digest, registryNameserver)
 		if err != nil {
 			log.Println("DS calc failed: .", err)
 		}
