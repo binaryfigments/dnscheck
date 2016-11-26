@@ -41,6 +41,7 @@ type Nameservers struct {
 	Root     []string `json:"root,omitempty"`
 	Registry []string `json:"registry,omitempty"`
 	Domain   []string `json:"domain,omitempty"`
+	Domain2  []string `json:"domain2,omitempty"`
 }
 
 // DomainDS struct

@@ -1,7 +1,6 @@
 package controllers
 
 import (
-	"fmt"
 	"log"
 
 	"github.com/binaryfigments/dnscheck/models"
@@ -13,6 +12,7 @@ func resolveDomainA(domain string) ([]string, error) {
 	m := new(dns.Msg)
 	m.SetQuestion(dns.Fqdn(domain), dns.TypeA)
 	c := new(dns.Client)
+	m.MsgHdr.RecursionDesired = true
 	in, _, err := c.Exchange(m, "8.8.8.8:53")
 	if err != nil {
 		return answer, err
@@ -29,6 +29,7 @@ func resolveDomainAAAA(domain string) ([]string, error) {
 	var answer []string
 	m := new(dns.Msg)
 	m.SetQuestion(dns.Fqdn(domain), dns.TypeAAAA)
+	m.MsgHdr.RecursionDesired = true
 	c := new(dns.Client)
 	in, _, err := c.Exchange(m, "8.8.8.8:53")
 	if err != nil {
@@ -46,6 +47,7 @@ func resolveDomainMX(domain string) ([]string, error) {
 	var answer []string
 	m := new(dns.Msg)
 	m.SetQuestion(dns.Fqdn(domain), dns.TypeMX)
+	m.MsgHdr.RecursionDesired = true
 	c := new(dns.Client)
 	in, _, err := c.Exchange(m, "8.8.8.8:53")
 	if err != nil {
@@ -63,6 +65,7 @@ func resolveDomainNS(domain string, nameserver string) ([]string, error) {
 	var answer []string
 	m := new(dns.Msg)
 	m.SetQuestion(dns.Fqdn(domain), dns.TypeNS)
+	m.MsgHdr.RecursionDesired = true
 	m.SetEdns0(4096, true)
 	c := new(dns.Client)
 	in, _, err := c.Exchange(m, nameserver+":53")
@@ -80,6 +83,7 @@ func resolveDomainNS(domain string, nameserver string) ([]string, error) {
 func resolveDomainDS(domain string, nameserver string) ([]*models.DomainDS, error) {
 	ds := []*models.DomainDS{}
 	m := new(dns.Msg)
+	m.MsgHdr.RecursionDesired = true
 	m.SetQuestion(dns.Fqdn(domain), dns.TypeDS)
 	m.SetEdns0(4096, true)
 	c := new(dns.Client)
@@ -88,7 +92,7 @@ func resolveDomainDS(domain string, nameserver string) ([]*models.DomainDS, erro
 		log.Println("[FAIL] No DS records found.")
 		return ds, err
 	}
-	fmt.Println(cap(in.Answer))
+	// fmt.Println(cap(in.Answer))
 	for _, ain := range in.Answer {
 		if a, ok := ain.(*dns.DS); ok {
 			readkey := new(models.DomainDS)
@@ -106,6 +110,7 @@ func resolveDomainDNSKEY(domain string, nameserver string) ([]*models.DomainDNSK
 	dnskey := []*models.DomainDNSKEY{}
 
 	m := new(dns.Msg)
+	m.MsgHdr.RecursionDesired = true
 	m.SetQuestion(dns.Fqdn(domain), dns.TypeDNSKEY)
 	m.SetEdns0(4096, true)
 	c := new(dns.Client)
@@ -138,6 +143,7 @@ func calculateDSRecord(domain string, digest uint8, nameserver string) ([]*model
 	m := new(dns.Msg)
 	m.SetQuestion(dns.Fqdn(domain), dns.TypeDNSKEY)
 	m.SetEdns0(4096, true)
+	m.MsgHdr.RecursionDesired = true
 	c := new(dns.Client)
 	in, _, err := c.Exchange(m, nameserver+":53")
 	if err != nil {
@@ -153,7 +159,7 @@ func calculateDSRecord(domain string, digest uint8, nameserver string) ([]*model
 			calculatedDS = append(calculatedDS, calckey)
 		}
 	}
-	return calculatedDS, err
+	return calculatedDS, nil
 }
 
 // checkDomainState
@@ -161,6 +167,7 @@ func checkDomainState(domain string) string {
 	m := new(dns.Msg)
 	m.SetQuestion(dns.Fqdn(domain), dns.TypeSOA)
 	m.SetEdns0(4096, true)
+	m.MsgHdr.RecursionDesired = true
 	c := new(dns.Client)
 
 Redo:
