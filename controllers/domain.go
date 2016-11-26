@@ -128,7 +128,10 @@ func (dc DomainController) GetDomain(w http.ResponseWriter, r *http.Request, p h
 	}
 	h.Answer.Nameservers.Domain = domainNameservers
 	domainNameserver := domainNameservers[0]
-	log.Println("[OK] TLD nameserver : ", domainNameserver)
+	domainNameserverIPs, err := resolveDomainA(domainNameserver)
+	domainNameserverIP := domainNameserverIPs[0]
+	log.Println("[OK] Domain nameserver IP :", domainNameserverIP)
+	log.Println("[OK] Domain nameserver : ", domainNameserver)
 
 	/*
 	 * DS and DNSKEY information
