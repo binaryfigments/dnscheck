@@ -114,7 +114,7 @@ func (dc DomainController) GetDomain(w http.ResponseWriter, r *http.Request, p h
 	log.Println("[OK] TLD nameserver IP : ", registryNameserverIP)
 
 	// Domain nameservers at Registry
-	domainNameserversRegistry, err := resolveDomainNS(domain, registryNameserver)
+	domainNameserversRegistry, err := resolveDomainNS(domain, registryNameserverIP)
 	if err != nil {
 		log.Println("No nameservers found: .", err)
 		h.Question.JobStatus = "Failed"
