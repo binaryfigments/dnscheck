@@ -38,10 +38,9 @@ type Registry struct {
 
 // Nameservers struct for information
 type Nameservers struct {
-	Root           []string `json:"root,omitempty"`
-	Registry       []string `json:"registry,omitempty"`
-	DomainRegistry []string `json:"domainregistry,omitempty"`
-	DomainHoster   []string `json:"domainhoster,omitempty"`
+	Root     []string `json:"root,omitempty"`
+	Registry []string `json:"registry,omitempty"`
+	Domain   []string `json:"domain,omitempty"`
 }
 
 // DomainDS struct
