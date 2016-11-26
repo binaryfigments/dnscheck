@@ -63,6 +63,7 @@ func resolveDomainNS(domain string, nameserver string) ([]string, error) {
 	var answer []string
 	m := new(dns.Msg)
 	m.SetQuestion(dns.Fqdn(domain), dns.TypeNS)
+	m.SetEdns0(4096, true)
 	c := new(dns.Client)
 	in, _, err := c.Exchange(m, nameserver+":53")
 	if err != nil {
