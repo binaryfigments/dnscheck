@@ -1,51 +1,25 @@
 # Go / Golang DNS and DNSSEC Check
 
-API DNS and DNSSEC information from DNS.
-
-Download, build and run.
-
-Usage:
-```
-USAGE :
-  -host string
-    	Set the server host (default "127.0.0.1")
-  -port string
-    	Set the server port (default "4004")
-```
+API DNS and DNSSEC information from DNS for use as module.
 
 For example:
 ```
 $ ./checkdns -host=localhost -port=4004
 ```
 
-Default values are:
-* Host: 127.0.0.1
-* Port: 4004
-
-When it's started, test it with curl like the command below.
-
-```
-curl http://localhost:4004/v1/domain/networking4all.com
-```
-
-Explain:
-* Host and port: http://localhost:4004
-* Version of test: /v1
-* What to test: /domain
-* Domain: networking4all.com
-
 # Dependencies
 
  * Go 1.7.x tested https://golang.org
- * httprouter https://github.com/julienschmidt/httprouter
  * govalidator https://github.com/miekg/dns
  * publixsuffix https://golang.org/x/net/publicsuffix
+ * idns https://golang.org/x/net/idna
 
 ```
-go get github.com/julienschmidt/httprouter
-go get github.com/miekg/dns
-go get golang.org/x/net/publicsuffix
+go get -u golang.org/x/net/idna
+go get -u github.com/miekg/dns
+go get -u golang.org/x/net/publicsuffix
 ```
+
 # TODO
 
 - [ ] TOP DOWN DNS CHECK!
