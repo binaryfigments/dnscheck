@@ -2,6 +2,8 @@ package dnscheck
 
 import (
 	"log"
+	"net"
+	"strings"
 	"time"
 
 	"github.com/miekg/dns"
@@ -105,7 +107,13 @@ func Run(domain string, startnameserver string) (*Message, error) {
 	msg.Answer.DomainAAAA = aaaarecords
 
 	mxrecords, err := resolveDomainMX(domain)
-	msg.Answer.DomainMX = mxrecords
+	msg.Answer.Email.MX = mxrecords
+
+	dmarcrecords, err := resolveDomainDMARC(domain)
+	msg.Answer.Email.DMARC = dmarcrecords
+
+	spfrecords, err := resolveDomainSPF(domain)
+	msg.Answer.Email.SPF = spfrecords
 
 	var digest uint8
 	if cap(msg.Answer.DomainDS) != 0 {
@@ -153,6 +161,36 @@ func resolveDomainA(domain string) ([]string, error) {
 	for _, ain := range in.Answer {
 		if a, ok := ain.(*dns.A); ok {
 			answer = append(answer, a.A.String())
+		}
+	}
+	return answer, nil
+}
+
+func resolveDomainDMARC(domain string) ([]string, error) {
+	var answer []string
+
+	resources, err := net.LookupTXT("_dmarc." + domain)
+	if err != nil {
+		return answer, err
+	}
+
+	for _, resource := range resources {
+		answer = append(answer, resource)
+	}
+	return answer, nil
+}
+
+func resolveDomainSPF(domain string) ([]string, error) {
+	var answer []string
+
+	resources, err := net.LookupTXT(domain)
+	if err != nil {
+		return answer, err
+	}
+
+	for _, resource := range resources {
+		if strings.HasPrefix(resource, "v=spf1") {
+			answer = append(answer, resource)
 		}
 	}
 	return answer, nil
@@ -357,6 +395,7 @@ type Answer struct {
 	DomainA           []string        `json:"DomainA,omitempty"`
 	DomainAAAA        []string        `json:"DomainAAAA,omitempty"`
 	DomainMX          []string        `json:"DomainMX,omitempty"`
+	Email             Email           `json:"Email,omitempty"`
 }
 
 // Registry struct for information
@@ -395,4 +434,11 @@ type DomainCalcDS struct {
 	Digest     string `json:"Digest,omitempty"`
 	DigestType uint8  `json:"DigestType,omitempty"`
 	KeyTag     uint16 `json:"KeyTag,omitempty"`
+}
+
+// Email struct
+type Email struct {
+	MX    []string `json:"MX,omitempty"`
+	SPF   []string `json:"SPF,omitempty"`
+	DMARC []string `json:"DMARC,omitempty"`
 }
