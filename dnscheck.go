@@ -169,7 +169,7 @@ func resolveDomainA(domain string) ([]string, error) {
 func resolveDomainDMARC(domain string) ([]string, error) {
 	var answer []string
 
-	resources, err := net.LookupTXT("_dmarc." + domain)
+	resources, err := net.LookupTXT("_dmarc." + domain + ".")
 	if err != nil {
 		return answer, err
 	}
