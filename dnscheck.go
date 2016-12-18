@@ -353,7 +353,6 @@ func resolveDomainSOA(domain string) (*Soa, error) {
 	}
 	for _, ain := range in.Answer {
 		if soa, ok := ain.(*dns.SOA); ok {
-			answer.String = soa.String()
 			answer.Serial = soa.Serial   // uint32
 			answer.Ns = soa.Ns           // string
 			answer.Expire = soa.Expire   // uint32
@@ -434,7 +433,6 @@ type Answer struct {
 
 // Soa struct for SOA information
 type Soa struct {
-	String  string `json:"string,omitempty"`
 	Ns      string `json:"ns,omitempty"`
 	Mbox    string `json:"mbox,omitempty"`
 	Serial  uint32 `json:"serial,omitempty"`
