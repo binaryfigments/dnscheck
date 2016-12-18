@@ -435,26 +435,14 @@ type Answer struct {
 // Soa struct for SOA information
 type Soa struct {
 	String  string `json:"string,omitempty"`
-	Serial  uint32 `json:"serial,omitempty"`
 	Ns      string `json:"ns,omitempty"`
-	Expire  uint32 `json:"expire,omitempty"`
 	Mbox    string `json:"mbox,omitempty"`
-	Minttl  uint32 `json:"minttl,omitempty"`
+	Serial  uint32 `json:"serial,omitempty"`
 	Refresh uint32 `json:"refresh,omitempty"`
 	Retry   uint32 `json:"retry,omitempty"`
+	Expire  uint32 `json:"expire,omitempty"`
+	Minttl  uint32 `json:"minttl,omitempty"`
 }
-
-/*
-The SOA record includes the following details:
-
-The primary name server for the domain, which is ns1.dnsimple.com or the first name server in the vanity name server list for vanity name servers.
-The responsible party for the domain, which is admin.dnsimple.com.
-A timestamp that changes whenever you update your domain.
-The number of seconds before the zone should be refreshed.
-The number of seconds before a failed refresh should be retried.
-The upper limit in seconds before a zone is considered no longer authoritative.
-The negative result TTL (for example, how long a resolver should consider a negative result for a subdomain to be valid before retrying).
-*/
 
 // Registry struct for information
 type Registry struct {
