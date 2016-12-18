@@ -100,6 +100,12 @@ func Run(domain string, startnameserver string) (*Message, error) {
 	msg.Answer.DomainDS = domainds
 	msg.Answer.DSRecordCount = cap(domainds)
 
+	domainsoa, err := resolveDomainSOA(domain)
+	if err != nil {
+		log.Println("No SOA found: ", err)
+	}
+	msg.Answer.SOA = domainsoa
+
 	arecords, err := resolveDomainA(domain)
 	msg.Answer.DomainA = arecords
 
@@ -333,6 +339,33 @@ func calculateDSRecord(domain string, digest uint8, nameserver string) ([]*Domai
 	return calculatedDS, nil
 }
 
+// resolveDomainSOA for checking soa
+func resolveDomainSOA(domain string) (*Soa, error) {
+	answer := new(Soa)
+	// answer := *Soa{}
+	m := new(dns.Msg)
+	m.SetQuestion(dns.Fqdn(domain), dns.TypeSOA)
+	c := new(dns.Client)
+	m.MsgHdr.RecursionDesired = true
+	in, _, err := c.Exchange(m, "8.8.8.8:53")
+	if err != nil {
+		return answer, err
+	}
+	for _, ain := range in.Answer {
+		if soa, ok := ain.(*dns.SOA); ok {
+			answer.String = soa.String()
+			answer.Serial = soa.Serial   // uint32
+			answer.Ns = soa.Ns           // string
+			answer.Expire = soa.Expire   // uint32
+			answer.Mbox = soa.Mbox       // string
+			answer.Minttl = soa.Minttl   // uint32
+			answer.Refresh = soa.Refresh // uint32
+			answer.Retry = soa.Retry     // uint32
+		}
+	}
+	return answer, nil
+}
+
 // checkDomainState
 func checkDomainState(domain string) string {
 	m := new(dns.Msg)
@@ -387,6 +420,7 @@ type Question struct {
 type Answer struct {
 	Registry          Registry        `json:"tld,omitempty"`
 	Nameservers       Nameservers     `json:"nameservers,omitempty"`
+	SOA               *Soa            `json:"SOA,omitempty"`
 	DSRecordCount     int             `json:"DSRecordCount,omitempty"`
 	DNSKEYRecordCount int             `json:"DNSKEYRecordCount,omitempty"`
 	DomainDS          []*DomainDS     `json:"DomainDS,omitempty"`
@@ -396,6 +430,18 @@ type Answer struct {
 	DomainAAAA        []string        `json:"DomainAAAA,omitempty"`
 	DomainMX          []string        `json:"DomainMX,omitempty"`
 	Email             Email           `json:"Email,omitempty"`
+}
+
+// Soa struct for SOA information
+type Soa struct {
+	String  string `json:"string,omitempty"`
+	Serial  uint32 `json:"serial,omitempty"`
+	Ns      string `json:"ns,omitempty"`
+	Expire  uint32 `json:"expire,omitempty"`
+	Mbox    string `json:"mbox,omitempty"`
+	Minttl  uint32 `json:"minttl,omitempty"`
+	Refresh uint32 `json:"refresh,omitempty"`
+	Retry   uint32 `json:"retry,omitempty"`
 }
 
 // Registry struct for information
