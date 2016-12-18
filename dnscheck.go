@@ -106,6 +106,12 @@ func Run(domain string, startnameserver string) (*Message, error) {
 	}
 	msg.Answer.SOA = domainsoa
 
+	domaintlsa, err := resolveDomainTLSA(domain)
+	if err != nil {
+		log.Println("No TLSA found: ", err)
+	}
+	msg.Answer.TLSA = domaintlsa
+
 	arecords, err := resolveDomainA(domain)
 	msg.Answer.DomainA = arecords
 
