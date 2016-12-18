@@ -444,6 +444,18 @@ type Soa struct {
 	Retry   uint32 `json:"retry,omitempty"`
 }
 
+/*
+The SOA record includes the following details:
+
+The primary name server for the domain, which is ns1.dnsimple.com or the first name server in the vanity name server list for vanity name servers.
+The responsible party for the domain, which is admin.dnsimple.com.
+A timestamp that changes whenever you update your domain.
+The number of seconds before the zone should be refreshed.
+The number of seconds before a failed refresh should be retried.
+The upper limit in seconds before a zone is considered no longer authoritative.
+The negative result TTL (for example, how long a resolver should consider a negative result for a subdomain to be valid before retrying).
+*/
+
 // Registry struct for information
 type Registry struct {
 	TLD   string `json:"tld,omitempty"`
