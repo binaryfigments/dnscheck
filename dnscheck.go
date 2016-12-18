@@ -365,6 +365,29 @@ func resolveDomainSOA(domain string) (*Soa, error) {
 	return answer, nil
 }
 
+// resolveDomainTLSA for checking soa
+func resolveDomainTLSA(domain string) (*Tlsa, error) {
+	answer := new(Tlsa)
+	tlsadomain := "_443._tcp." + domain
+	m := new(dns.Msg)
+	m.SetQuestion(dns.Fqdn(tlsadomain), dns.TypeTLSA)
+	c := new(dns.Client)
+	m.MsgHdr.RecursionDesired = true
+	in, _, err := c.Exchange(m, "8.8.8.8:53")
+	if err != nil {
+		return answer, err
+	}
+	for _, ain := range in.Answer {
+		if tlsa, ok := ain.(*dns.TLSA); ok {
+			answer.Certificate = tlsa.Certificate   // string
+			answer.MatchingType = tlsa.MatchingType // uint8
+			answer.Selector = tlsa.Selector         // uint8
+			answer.Usage = tlsa.Usage               // uint8
+		}
+	}
+	return answer, nil
+}
+
 // checkDomainState
 func checkDomainState(domain string) string {
 	m := new(dns.Msg)
@@ -429,6 +452,7 @@ type Answer struct {
 	DomainAAAA        []string        `json:"DomainAAAA,omitempty"`
 	DomainMX          []string        `json:"DomainMX,omitempty"`
 	Email             Email           `json:"Email,omitempty"`
+	TLSA              *Tlsa           `json:"TLSA,omitempty"`
 }
 
 // Soa struct for SOA information
@@ -440,6 +464,14 @@ type Soa struct {
 	Retry   uint32 `json:"retry,omitempty"`
 	Expire  uint32 `json:"expire,omitempty"`
 	Minttl  uint32 `json:"minttl,omitempty"`
+}
+
+// Tlsa struct for SOA information
+type Tlsa struct {
+	Certificate  string `json:"certificate,omitempty"`
+	MatchingType uint8  `json:"matchingtype,omitempty"`
+	Selector     uint8  `json:"selector,omitempty"`
+	Usage        uint8  `json:"usage,omitempty"`
 }
 
 // Registry struct for information
