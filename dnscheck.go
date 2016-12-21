@@ -106,12 +106,6 @@ func Run(domain string, startnameserver string) (*Message, error) {
 	}
 	msg.Answer.SOA = domainsoa
 
-	domaintlsa, err := resolveDomainTLSA(domain)
-	if err != nil {
-		log.Println("No TLSA found: ", err)
-	}
-	msg.Answer.TLSA = domaintlsa
-
 	arecords, err := resolveDomainA(domain)
 	msg.Answer.DomainA = arecords
 
@@ -126,6 +120,48 @@ func Run(domain string, startnameserver string) (*Message, error) {
 
 	spfrecords, err := resolveDomainSPF(domain)
 	msg.Answer.Email.SPF = spfrecords
+
+	// TLSA records
+	tlsas := []*Tlsa{}
+
+	// Domain name TLSA
+	domaintlsa, err := resolveDomainTLSA(domain)
+	if err != nil {
+		log.Println("No TLSA found: ", err)
+	}
+
+	// Fill TLSARecords
+	msg.Answer.TLSA = domaintlsa
+
+	checktlsa := "_443._tcp." + domain
+	domainnametlsa, err := resolveTLSARecord(checktlsa)
+	if err != nil {
+		log.Println("No TLSA found: ", err)
+	} else {
+		tlsas = append(tlsas, domainnametlsa)
+	}
+
+	checkwwwtlsa := "_443._tcp.www." + domain
+	domainwwwtlsa, err := resolveTLSARecord(checkwwwtlsa)
+	if err != nil {
+		log.Println("No TLSA found: ", err)
+	} else {
+		tlsas = append(tlsas, domainwwwtlsa)
+	}
+
+	for _, resource := range msg.Answer.Email.MX {
+		// answer = append(answer, resource)
+		checktlsamx := "_25._tcp." + strings.TrimSuffix(resource, ".")
+		domainmxtlsa, err := resolveTLSARecord(checktlsamx)
+		if err != nil {
+			log.Println("No TLSA found: ", checktlsamx)
+		} else {
+			tlsas = append(tlsas, domainmxtlsa)
+		}
+	}
+
+	// Add TLSAs to answer struct
+	msg.Answer.TLSARecords = tlsas
 
 	var digest uint8
 	if cap(msg.Answer.DomainDS) != 0 {
@@ -385,6 +421,31 @@ func resolveDomainTLSA(domain string) (*Tlsa, error) {
 	}
 	for _, ain := range in.Answer {
 		if tlsa, ok := ain.(*dns.TLSA); ok {
+			answer.Record = tlsadomain              // string
+			answer.Certificate = tlsa.Certificate   // string
+			answer.MatchingType = tlsa.MatchingType // uint8
+			answer.Selector = tlsa.Selector         // uint8
+			answer.Usage = tlsa.Usage               // uint8
+		}
+	}
+	return answer, nil
+}
+
+// resolveTLSARecord for checking soa
+func resolveTLSARecord(record string) (*Tlsa, error) {
+	answer := new(Tlsa)
+	m := new(dns.Msg)
+	m.SetQuestion(dns.Fqdn(record), dns.TypeTLSA)
+	c := new(dns.Client)
+	m.MsgHdr.RecursionDesired = true
+	in, _, err := c.Exchange(m, "8.8.8.8:53")
+	if err != nil {
+		return answer, err
+	}
+	for _, ain := range in.Answer {
+		if tlsa, ok := ain.(*dns.TLSA); ok {
+			log.Println("Found: ", record)
+			answer.Record = record                  // string
 			answer.Certificate = tlsa.Certificate   // string
 			answer.MatchingType = tlsa.MatchingType // uint8
 			answer.Selector = tlsa.Selector         // uint8
@@ -430,13 +491,13 @@ Redo:
  * Used Models
  */
 
-// Message for retunring
+// Message struct for returning the question and the answer.
 type Message struct {
 	Question Question `json:"question"`
 	Answer   Answer   `json:"answer"`
 }
 
-// Question struct
+// Question struct for retuning what information is asked.
 type Question struct {
 	JobDomain  string    `json:"domain"`
 	JobStatus  string    `json:"status"`
@@ -444,7 +505,7 @@ type Question struct {
 	JobTime    time.Time `json:"time"`
 }
 
-// Answer struct
+// Answer struct the answer of the question.
 type Answer struct {
 	Registry          Registry        `json:"tld,omitempty"`
 	Nameservers       Nameservers     `json:"nameservers,omitempty"`
@@ -459,9 +520,10 @@ type Answer struct {
 	DomainMX          []string        `json:"DomainMX,omitempty"`
 	Email             Email           `json:"Email,omitempty"`
 	TLSA              *Tlsa           `json:"TLSA,omitempty"`
+	TLSARecords       []*Tlsa         `json:"TLSARecords,omitempty"`
 }
 
-// Soa struct for SOA information
+// Soa struct for SOA information aquired from the nameserver.
 type Soa struct {
 	Ns      string `json:"ns,omitempty"`
 	Mbox    string `json:"mbox,omitempty"`
@@ -474,6 +536,7 @@ type Soa struct {
 
 // Tlsa struct for SOA information
 type Tlsa struct {
+	Record       string `json:"record,omitempty"`
 	Certificate  string `json:"certificate,omitempty"`
 	MatchingType uint8  `json:"matchingtype,omitempty"`
 	Selector     uint8  `json:"selector,omitempty"`
