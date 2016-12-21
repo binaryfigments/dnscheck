@@ -21,6 +21,8 @@ func Run(domain string, startnameserver string) (*Message, error) {
 	msg.Question.JobTime = time.Now()
 	msg.Question.JobDomain = domain
 
+	controls := []*Controls{}
+
 	// Valid domain name (ASCII or IDN)
 	domain, err := idna.ToASCII(domain)
 	if err != nil {
@@ -55,6 +57,24 @@ func Run(domain string, startnameserver string) (*Message, error) {
 	msg.Answer.Registry.TLD = tld
 	msg.Answer.Registry.ICANN = tldicann
 
+	if msg.Answer.Registry.ICANN == false {
+		control := &Controls{
+			"DNS-ICANN-001",
+			"DNS",
+			"TLD is not an ICANN member",
+			0,
+		}
+		controls = append(controls, control)
+	} else {
+		control := &Controls{
+			"DNS-ICANN-001",
+			"DNS",
+			"TLD is an ICANN member",
+			0,
+		}
+		controls = append(controls, control)
+	}
+
 	// Root nameservers
 	rootNameservers, err := resolveDomainNS(".", startnameserver)
 	if err != nil {
@@ -79,6 +99,13 @@ func Run(domain string, startnameserver string) (*Message, error) {
 	// Domain nameservers at zone
 	domainNameservers, err := resolveDomainNS(domain, startnameserver)
 	if err != nil {
+		control := &Controls{
+			"DNS-NS-001",
+			"DNS",
+			"No NS records found for domain.",
+			-5,
+		}
+		controls = append(controls, control)
 		msg.Question.JobStatus = "Failed"
 		msg.Question.JobMessage = "No nameservers found"
 		return msg, err
@@ -99,6 +126,23 @@ func Run(domain string, startnameserver string) (*Message, error) {
 	}
 	msg.Answer.DomainDS = domainds
 	msg.Answer.DSRecordCount = cap(domainds)
+	if msg.Answer.DSRecordCount != 0 {
+		control := &Controls{
+			"DNS-DNSSEC-001",
+			"DNS",
+			"DS record found at registry.",
+			5,
+		}
+		controls = append(controls, control)
+	} else {
+		control := &Controls{
+			"DNS-DNSSEC-001",
+			"DNS",
+			"No DS record found at registry.",
+			-5,
+		}
+		controls = append(controls, control)
+	}
 
 	domainsoa, err := resolveDomainSOA(domain)
 	if err != nil {
@@ -111,34 +155,99 @@ func Run(domain string, startnameserver string) (*Message, error) {
 
 	aaaarecords, err := resolveDomainAAAA(domain)
 	msg.Answer.DomainAAAA = aaaarecords
+	if msg.Answer.DomainAAAA != nil {
+		control := &Controls{
+			"DNS-IPV6-001",
+			"DNS",
+			"Domain name record in nameserver has an AAAA record for IPv6.",
+			5,
+		}
+		controls = append(controls, control)
+	} else {
+		control := &Controls{
+			"DNS-IPV6-001",
+			"DNS",
+			"Domain name record in nameserver has no AAAA record for IPv6.",
+			-5,
+		}
+		controls = append(controls, control)
+	}
 
 	mxrecords, err := resolveDomainMX(domain)
 	msg.Answer.Email.MX = mxrecords
+	if msg.Answer.Email.MX == nil {
+		control := &Controls{
+			"DNS-EMAIL-001",
+			"DNS",
+			"No MX records found for domain.",
+			-2,
+		}
+		controls = append(controls, control)
+	}
 
 	dmarcrecords, err := resolveDomainDMARC(domain)
 	msg.Answer.Email.DMARC = dmarcrecords
+	if msg.Answer.Email.DMARC != nil {
+		control := &Controls{
+			"DNS-EMAIL-002",
+			"DNS",
+			"DMARC is configured on your domain.",
+			5,
+		}
+		controls = append(controls, control)
+	} else {
+		control := &Controls{
+			"DNS-EMAIL-002",
+			"DNS",
+			"DMARC is not configured on your domain.",
+			-5,
+		}
+		controls = append(controls, control)
+	}
 
 	spfrecords, err := resolveDomainSPF(domain)
 	msg.Answer.Email.SPF = spfrecords
+	if msg.Answer.Email.SPF != nil {
+		control := &Controls{
+			"DNS-EMAIL-003",
+			"DNS",
+			"SPF is configured on your domain.",
+			5,
+		}
+		controls = append(controls, control)
+	} else {
+		control := &Controls{
+			"DNS-EMAIL-003",
+			"DNS",
+			"SPF is not configured on your domain.",
+			-5,
+		}
+		controls = append(controls, control)
+	}
 
 	// TLSA records
 	tlsas := []*Tlsa{}
-
-	// Domain name TLSA
-	domaintlsa, err := resolveDomainTLSA(domain)
-	if err != nil {
-		log.Println("No TLSA found: ", err)
-	}
-
-	// Fill TLSARecords
-	msg.Answer.TLSA = domaintlsa
 
 	checktlsa := "_443._tcp." + domain
 	domainnametlsa, err := resolveTLSARecord(checktlsa)
 	if err != nil {
 		log.Println("No TLSA found: ", err)
+		control := &Controls{
+			"DNS-DANE-001",
+			"DNS",
+			"TLSA record for DANE not fund for your HTTPS website",
+			-5,
+		}
+		controls = append(controls, control)
 	} else {
 		tlsas = append(tlsas, domainnametlsa)
+		control := &Controls{
+			"DNS-DANE-001",
+			"DNS",
+			"TLSA record for DANE found for your HTTPS website",
+			5,
+		}
+		controls = append(controls, control)
 	}
 
 	checkwwwtlsa := "_443._tcp.www." + domain
@@ -147,6 +256,7 @@ func Run(domain string, startnameserver string) (*Message, error) {
 		log.Println("No TLSA found: ", err)
 	} else {
 		tlsas = append(tlsas, domainwwwtlsa)
+
 	}
 
 	for _, resource := range msg.Answer.Email.MX {
@@ -155,8 +265,22 @@ func Run(domain string, startnameserver string) (*Message, error) {
 		domainmxtlsa, err := resolveTLSARecord(checktlsamx)
 		if err != nil {
 			log.Println("No TLSA found: ", checktlsamx)
+			control := &Controls{
+				"DNS-DANE-002",
+				"DNS",
+				"TLSA record for DANE found for your MX record.",
+				-5,
+			}
+			controls = append(controls, control)
 		} else {
 			tlsas = append(tlsas, domainmxtlsa)
+			control := &Controls{
+				"DNS-DANE-002",
+				"DNS",
+				"TLSA record for DANE found for your MX record.",
+				5,
+			}
+			controls = append(controls, control)
 		}
 	}
 
@@ -174,8 +298,26 @@ func Run(domain string, startnameserver string) (*Message, error) {
 		// log.Println("DNSKEY lookup failed: .", err)
 	}
 	// log.Println("[OK] DNSKEY record lookup done.")
+
 	msg.Answer.DomainDNSKEY = dnskey
 	msg.Answer.DNSKEYRecordCount = cap(msg.Answer.DomainDNSKEY)
+	if msg.Answer.DNSKEYRecordCount != 0 {
+		control := &Controls{
+			"DNS-DNSSEC-003",
+			"DNS",
+			"DNSKEY found for your domain.",
+			5,
+		}
+		controls = append(controls, control)
+	} else {
+		control := &Controls{
+			"DNS-DNSSEC-003",
+			"DNS",
+			"DNSKEY not found for your domain..",
+			-5,
+		}
+		controls = append(controls, control)
+	}
 
 	if msg.Answer.DSRecordCount > 0 && msg.Answer.DNSKEYRecordCount > 0 {
 		calculatedDS, err := calculateDSRecord(domain, digest, domainNameserver)
@@ -184,6 +326,9 @@ func Run(domain string, startnameserver string) (*Message, error) {
 		}
 		msg.Answer.DomainCalcDS = calculatedDS
 	}
+
+	// Add Controls to struct
+	msg.Controls = controls
 
 	msg.Question.JobStatus = "OK"
 	msg.Question.JobMessage = "Job done!"
@@ -407,30 +552,6 @@ func resolveDomainSOA(domain string) (*Soa, error) {
 	return answer, nil
 }
 
-// resolveDomainTLSA for checking soa
-func resolveDomainTLSA(domain string) (*Tlsa, error) {
-	answer := new(Tlsa)
-	tlsadomain := "_443._tcp." + domain
-	m := new(dns.Msg)
-	m.SetQuestion(dns.Fqdn(tlsadomain), dns.TypeTLSA)
-	c := new(dns.Client)
-	m.MsgHdr.RecursionDesired = true
-	in, _, err := c.Exchange(m, "8.8.8.8:53")
-	if err != nil {
-		return answer, err
-	}
-	for _, ain := range in.Answer {
-		if tlsa, ok := ain.(*dns.TLSA); ok {
-			answer.Record = tlsadomain              // string
-			answer.Certificate = tlsa.Certificate   // string
-			answer.MatchingType = tlsa.MatchingType // uint8
-			answer.Selector = tlsa.Selector         // uint8
-			answer.Usage = tlsa.Usage               // uint8
-		}
-	}
-	return answer, nil
-}
-
 // resolveTLSARecord for checking soa
 func resolveTLSARecord(record string) (*Tlsa, error) {
 	answer := new(Tlsa)
@@ -485,105 +606,4 @@ Redo:
 	} else {
 		return "500, 501, DNS server could not be reached"
 	}
-}
-
-/*
- * Used Models
- */
-
-// Message struct for returning the question and the answer.
-type Message struct {
-	Question Question `json:"question"`
-	Answer   Answer   `json:"answer"`
-}
-
-// Question struct for retuning what information is asked.
-type Question struct {
-	JobDomain  string    `json:"domain"`
-	JobStatus  string    `json:"status"`
-	JobMessage string    `json:"message"`
-	JobTime    time.Time `json:"time"`
-}
-
-// Answer struct the answer of the question.
-type Answer struct {
-	Registry          Registry        `json:"tld,omitempty"`
-	Nameservers       Nameservers     `json:"nameservers,omitempty"`
-	SOA               *Soa            `json:"SOA,omitempty"`
-	DSRecordCount     int             `json:"DSRecordCount,omitempty"`
-	DNSKEYRecordCount int             `json:"DNSKEYRecordCount,omitempty"`
-	DomainDS          []*DomainDS     `json:"DomainDS,omitempty"`
-	DomainDNSKEY      []*DomainDNSKEY `json:"DomainDNSKEY,omitempty"`
-	DomainCalcDS      []*DomainCalcDS `json:"DomainCalcDS,omitempty"`
-	DomainA           []string        `json:"DomainA,omitempty"`
-	DomainAAAA        []string        `json:"DomainAAAA,omitempty"`
-	DomainMX          []string        `json:"DomainMX,omitempty"`
-	Email             Email           `json:"Email,omitempty"`
-	TLSA              *Tlsa           `json:"TLSA,omitempty"`
-	TLSARecords       []*Tlsa         `json:"TLSARecords,omitempty"`
-}
-
-// Soa struct for SOA information aquired from the nameserver.
-type Soa struct {
-	Ns      string `json:"ns,omitempty"`
-	Mbox    string `json:"mbox,omitempty"`
-	Serial  uint32 `json:"serial,omitempty"`
-	Refresh uint32 `json:"refresh,omitempty"`
-	Retry   uint32 `json:"retry,omitempty"`
-	Expire  uint32 `json:"expire,omitempty"`
-	Minttl  uint32 `json:"minttl,omitempty"`
-}
-
-// Tlsa struct for SOA information
-type Tlsa struct {
-	Record       string `json:"record,omitempty"`
-	Certificate  string `json:"certificate,omitempty"`
-	MatchingType uint8  `json:"matchingtype,omitempty"`
-	Selector     uint8  `json:"selector,omitempty"`
-	Usage        uint8  `json:"usage,omitempty"`
-}
-
-// Registry struct for information
-type Registry struct {
-	TLD   string `json:"tld,omitempty"`
-	ICANN bool   `json:"icann,omitempty"`
-}
-
-// Nameservers struct for information
-type Nameservers struct {
-	Root     []string `json:"root,omitempty"`
-	Registry []string `json:"registry,omitempty"`
-	Domain   []string `json:"domain,omitempty"`
-	Domain2  []string `json:"domain2,omitempty"`
-}
-
-// DomainDS struct
-type DomainDS struct {
-	Algorithm  uint8  `json:"Algorithm,omitempty"`
-	Digest     string `json:"Digest,omitempty"`
-	DigestType uint8  `json:"DigestType,omitempty"`
-	KeyTag     uint16 `json:"KeyTag,omitempty"`
-}
-
-// DomainDNSKEY struct
-type DomainDNSKEY struct {
-	Algorithm uint8  `json:"Algorithm,omitempty"`
-	Flags     uint16 `json:"Flags,omitempty"`
-	Protocol  uint8  `json:"Protocol,omitempty"`
-	PublicKey string `json:"PublicKey,omitempty"`
-}
-
-// DomainCalcDS struct
-type DomainCalcDS struct {
-	Algorithm  uint8  `json:"Algorithm,omitempty"`
-	Digest     string `json:"Digest,omitempty"`
-	DigestType uint8  `json:"DigestType,omitempty"`
-	KeyTag     uint16 `json:"KeyTag,omitempty"`
-}
-
-// Email struct
-type Email struct {
-	MX    []string `json:"MX,omitempty"`
-	SPF   []string `json:"SPF,omitempty"`
-	DMARC []string `json:"DMARC,omitempty"`
 }
