@@ -268,7 +268,7 @@ func Run(domain string, startnameserver string) (*Message, error) {
 			control := &Controls{
 				"DNS-DANE-002",
 				"DNS",
-				"TLSA record for DANE found for your MX record.",
+				"TLSA record for DANE not found for your MX record.",
 				-5,
 			}
 			controls = append(controls, control)
