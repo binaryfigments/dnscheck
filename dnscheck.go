@@ -235,7 +235,7 @@ func Run(domain string, startnameserver string) (*Message, error) {
 		control := &Controls{
 			"DNS-DANE-001",
 			"DNS",
-			"TLSA record for DANE not fund for your HTTPS website",
+			"TLSA record for DANE not found for HTTPS website (" + checktlsa + ").",
 			-5,
 		}
 		controls = append(controls, control)
@@ -244,7 +244,7 @@ func Run(domain string, startnameserver string) (*Message, error) {
 		control := &Controls{
 			"DNS-DANE-001",
 			"DNS",
-			"TLSA record for DANE found for your HTTPS website",
+			"TLSA record for DANE found for HTTPS website (" + checktlsa + ").",
 			5,
 		}
 		controls = append(controls, control)
@@ -268,7 +268,7 @@ func Run(domain string, startnameserver string) (*Message, error) {
 			control := &Controls{
 				"DNS-DANE-002",
 				"DNS",
-				"TLSA record for DANE not found for your MX record.",
+				"TLSA record for DANE not found for MX an record (" + checktlsamx + ").",
 				-5,
 			}
 			controls = append(controls, control)
@@ -277,7 +277,7 @@ func Run(domain string, startnameserver string) (*Message, error) {
 			control := &Controls{
 				"DNS-DANE-002",
 				"DNS",
-				"TLSA record for DANE found for your MX record.",
+				"TLSA record for DANE found for MX an record (" + checktlsamx + ").",
 				5,
 			}
 			controls = append(controls, control)
@@ -313,7 +313,7 @@ func Run(domain string, startnameserver string) (*Message, error) {
 		control := &Controls{
 			"DNS-DNSSEC-003",
 			"DNS",
-			"DNSKEY not found for your domain..",
+			"DNSKEY not found for your domain.",
 			-5,
 		}
 		controls = append(controls, control)
