@@ -264,23 +264,26 @@ func Run(domain string, startnameserver string) (*Message, error) {
 		checktlsamx := "_25._tcp." + strings.TrimSuffix(resource, ".")
 		domainmxtlsa, err := resolveTLSARecord(checktlsamx)
 		if err != nil {
-			log.Println("No TLSA found: ", checktlsamx)
-			control := &Controls{
-				"DNS-DANE-002",
-				"DNS",
-				"TLSA record for DANE not found for MX an record (" + checktlsamx + ").",
-				-5,
-			}
-			controls = append(controls, control)
+			log.Println("TLSA eror check")
 		} else {
-			tlsas = append(tlsas, domainmxtlsa)
-			control := &Controls{
-				"DNS-DANE-002",
-				"DNS",
-				"TLSA record for DANE found for MX an record (" + checktlsamx + ").",
-				5,
+			if domainmxtlsa.Certificate != "" {
+				tlsas = append(tlsas, domainmxtlsa)
+				control := &Controls{
+					"DNS-DANE-002",
+					"DNS",
+					"TLSA record for DANE found for MX an record (" + checktlsamx + ").",
+					5,
+				}
+				controls = append(controls, control)
+			} else {
+				control := &Controls{
+					"DNS-DANE-002",
+					"DNS",
+					"TLSA record for DANE not found for MX an record (" + checktlsamx + ").",
+					-5,
+				}
+				controls = append(controls, control)
 			}
-			controls = append(controls, control)
 		}
 	}
 
@@ -561,6 +564,7 @@ func resolveTLSARecord(record string) (*Tlsa, error) {
 	m.MsgHdr.RecursionDesired = true
 	in, _, err := c.Exchange(m, "8.8.8.8:53")
 	if err != nil {
+		log.Println("Not Found: ", record)
 		return answer, err
 	}
 	for _, ain := range in.Answer {
