@@ -591,8 +591,6 @@ func checkDomainState(domain string) string {
 Redo:
 	in, _, err := c.Exchange(m, "8.8.8.8:53")
 
-	// in, _, err := c.Exchange(m, "8.8.4.4:53") // Second return value is RTT, not used for now
-
 	if err == nil {
 		switch in.MsgHdr.Rcode {
 		case dns.RcodeServerFailure:
