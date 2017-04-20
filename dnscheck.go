@@ -1,7 +1,6 @@
 package dnscheck
 
 import (
-	"log"
 	"net"
 	"strings"
 	"time"
@@ -10,10 +9,6 @@ import (
 	"golang.org/x/net/idna"
 	"golang.org/x/net/publicsuffix"
 )
-
-/*
- * Main function
- */
 
 // Run function
 func Run(domain string, startnameserver string) (*Message, error) {
@@ -43,7 +38,7 @@ func Run(domain string, startnameserver string) (*Message, error) {
 
 	domainstate := checkDomainState(domain)
 	if domainstate != "OK" {
-		log.Println(domainstate)
+		// log.Println(domainstate)
 		msg.Question.JobStatus = "Failed"
 		msg.Question.JobMessage = domainstate
 		return msg, err
@@ -78,7 +73,7 @@ func Run(domain string, startnameserver string) (*Message, error) {
 	// Root nameservers
 	rootNameservers, err := resolveDomainNS(".", startnameserver)
 	if err != nil {
-		log.Println("No nameservers found: .", err)
+		// log.Println("No nameservers found: .", err)
 		msg.Question.JobStatus = "Failed"
 		msg.Question.JobMessage = "No nameservers found"
 		return msg, err
@@ -88,7 +83,7 @@ func Run(domain string, startnameserver string) (*Message, error) {
 	// TLD nameserver
 	registryNameservers, err := resolveDomainNS(tld, startnameserver)
 	if err != nil {
-		log.Println("No nameservers found: .", err)
+		// log.Println("No nameservers found: .", err)
 		msg.Question.JobStatus = "Failed"
 		msg.Question.JobMessage = "No nameservers found"
 		return msg, err
@@ -146,7 +141,7 @@ func Run(domain string, startnameserver string) (*Message, error) {
 
 	domainsoa, err := resolveDomainSOA(domain)
 	if err != nil {
-		log.Println("No SOA found: ", err)
+		// log.Println("No SOA found: ", err)
 	}
 	msg.Answer.SOA = domainsoa
 
@@ -230,8 +225,8 @@ func Run(domain string, startnameserver string) (*Message, error) {
 
 	checktlsa := "_443._tcp." + domain
 	domainnametlsa, err := resolveTLSARecord(checktlsa)
-	if err != nil {
-		log.Println("No TLSA found: ", err)
+	if domainnametlsa.Record == "" {
+		// log.Println("No TLSA found: ", err)
 		control := &Controls{
 			"DNS-DANE-001",
 			"DNS",
@@ -250,23 +245,14 @@ func Run(domain string, startnameserver string) (*Message, error) {
 		controls = append(controls, control)
 	}
 
-	checkwwwtlsa := "_443._tcp.www." + domain
-	domainwwwtlsa, err := resolveTLSARecord(checkwwwtlsa)
-	if err != nil {
-		log.Println("No TLSA found: ", err)
-	} else {
-		tlsas = append(tlsas, domainwwwtlsa)
-
-	}
-
 	for _, resource := range msg.Answer.Email.MX {
 		// answer = append(answer, resource)
 		checktlsamx := "_25._tcp." + strings.TrimSuffix(resource, ".")
 		domainmxtlsa, err := resolveTLSARecord(checktlsamx)
 		if err != nil {
-			log.Println("TLSA eror check")
+			// log.Println("TLSA eror check")
 		} else {
-			if domainmxtlsa.Certificate != "" {
+			if domainmxtlsa.Record != "" {
 				tlsas = append(tlsas, domainmxtlsa)
 				control := &Controls{
 					"DNS-DANE-002",
@@ -325,7 +311,7 @@ func Run(domain string, startnameserver string) (*Message, error) {
 	if msg.Answer.DSRecordCount > 0 && msg.Answer.DNSKEYRecordCount > 0 {
 		calculatedDS, err := calculateDSRecord(domain, digest, domainNameserver)
 		if err != nil {
-			log.Println("[ERROR] DS calc failed: .", err)
+			// log.Println("[ERROR] DS calc failed: .", err)
 		}
 		msg.Answer.DomainCalcDS = calculatedDS
 	}
@@ -456,7 +442,7 @@ func resolveDomainDS(domain string, nameserver string) ([]*DomainDS, error) {
 	c := new(dns.Client)
 	in, _, err := c.Exchange(m, nameserver+":53")
 	if err != nil {
-		log.Println("[FAIL] No DS records found.")
+		// log.Println("[FAIL] No DS records found.")
 		return ds, err
 	}
 	// fmt.Println(cap(in.Answer))
@@ -555,7 +541,7 @@ func resolveDomainSOA(domain string) (*Soa, error) {
 	return answer, nil
 }
 
-// resolveTLSARecord for checking soa
+// resolveTLSARecord for checking TLSA
 func resolveTLSARecord(record string) (*Tlsa, error) {
 	answer := new(Tlsa)
 	m := new(dns.Msg)
@@ -564,12 +550,12 @@ func resolveTLSARecord(record string) (*Tlsa, error) {
 	m.MsgHdr.RecursionDesired = true
 	in, _, err := c.Exchange(m, "8.8.8.8:53")
 	if err != nil {
-		log.Println("Not Found: ", record)
+		// log.Println("Not Found: ", record)
 		return answer, err
 	}
 	for _, ain := range in.Answer {
 		if tlsa, ok := ain.(*dns.TLSA); ok {
-			log.Println("Found: ", record)
+			// log.Println("Found: ", record)
 			answer.Record = record                  // string
 			answer.Certificate = tlsa.Certificate   // string
 			answer.MatchingType = tlsa.MatchingType // uint8
